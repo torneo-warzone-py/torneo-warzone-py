@@ -13,46 +13,64 @@ body{background:radial-gradient(ellipse at 5% 5%,#bd233e48,transparent 46%),radi
 .leader .score,.points{color:#d1e5ff;text-shadow:0 0 18px #4685d355}.badge.live{border-color:#92bdff6b;background:#2864ac27;color:#d4e7ff}tbody tr:first-child{background:#669cff0c}
 select{color:#f4f7ff;background:#142039;border:1px solid #bdd0f155;padding:8px;border-radius:7px}
 
+.modalidades{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.modalidades button{font:inherit;font-weight:700;color:var(--text);background:#17243d;border:1px solid var(--line);border-radius:10px;padding:13px 20px;cursor:pointer}.modalidades button[aria-pressed="true"]{background:linear-gradient(130deg,#963348,#275899);border-color:#d0def5}.modalidades button:focus-visible{outline:3px solid #b9dbff;outline-offset:3px}
 </style></head><body><main>
 <div class="top"><div class="brand"><span class="mark">W</span>LIGA PARAGUAYA DE WARZONE</div><span class="badge" id="conexion">CARGANDO</span></div>
+<nav class="modalidades" aria-label="Modalidad de competición"><button id="ver-torneos" type="button" aria-pressed="true">🏆 Torneos</button><button id="ver-amistosas" type="button" aria-pressed="false">🤝 Privadas amistosas</button></nav><p id="descripcion-modalidad">Resultados oficiales de los torneos de la liga.</p>
 <div id="aviso" hidden role="status"></div>
 <header class="hero"><div><div class="eyebrow" id="servidor">CLASIFICACIÓN PÚBLICA</div><h1 id="nombre">El torneo,<br>en directo.</h1><p id="detalle">Los resultados aprobados aparecen aquí automáticamente.</p><span class="badge" id="estado">ESPERANDO DATOS</span></div><div class="leader" id="lider"><div><div class="eyebrow">PRIMER PUESTO</div><strong id="lider-nombre">Por decidir</strong></div><div><span class="score" id="lider-puntos">—</span><div class="detail">PUNTOS TOTALES</div></div></div></header>
 <div class="metrics"><div class="metric"><span>Formato</span><strong id="formato">—</strong></div><div class="metric"><span>Equipos</span><strong id="equipos">0</strong></div><div class="metric"><span>Puntos por kill</span><strong id="puntos-kill">—</strong></div></div>
 <section class="section"><div class="section-head"><h2>Clasificación</h2><span class="detail" id="frecuencia">Actualización cada 30 s</span></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Equipo</th><th>Partidas</th><th>Kills</th><th>Penalización</th><th>Puntos</th></tr></thead><tbody id="tabla"></tbody></table></div><div class="empty" id="vacio">Todavía no hay resultados publicados.</div></section>
 <section class="section"><div class="section-head"><h2>Jugadores y MVP por partida</h2><label>Ver estadísticas <select id="partida-jugadores"><option value="">Todo el torneo</option></select></label></div><p id="mvp-partida">Solo resultados aprobados.</p><div class="table-wrap"><table><thead><tr><th>#</th><th>Jugador</th><th>Equipo</th><th>Partidas</th><th>Bajas</th></tr></thead><tbody id="tabla-jugadores"></tbody></table></div><p id="vacio-jugadores">Esperando bajas individuales aprobadas.</p></section>
 <section class="section"><h2>Reglas de puntuación</h2><p id="reglas-puntos">Esperando configuración del torneo.</p></section>
-<section class="section"><h2>Próximos eventos</h2><div id="eventos"><p>La próxima fecha se publicará aquí.</p></div></section><div class="bottom"><section class="section"><h2>MVP · jugadores</h2><div id="mvp"><p>Las estadísticas individuales aparecerán cuando se aprueben.</p></div></section><section class="section"><h2>Torneos anteriores</h2><div id="historial"><p>El historial empieza con el primer torneo cerrado.</p></div></section></div>
+<section class="section"><h2>Próximos eventos</h2><div id="eventos"><p>La próxima fecha se publicará aquí.</p></div></section><div class="bottom"><section class="section"><h2>MVP · jugadores</h2><div id="mvp"><p>Las estadísticas individuales aparecerán cuando se aprueben.</p></div></section><section class="section"><h2 id="titulo-historial">Torneos anteriores</h2><div id="historial"><p>El historial empieza con el primer torneo cerrado.</p></div></section></div>
 <footer><span>LIGA PARAGUAYA DE WARZONE / RESULTADOS OFICIALES</span><span id="actualizado">Esperando la primera publicación del bot.</span></footer>
 </main><script>
 const config={"url":"https://ghyobahmutlaguvvhbip.supabase.co","clave":"sb_publishable_hVVNSP6p-C2NJEesq8wvqw_IBI1_UAR","slug":"warzone-1506431948350820674","intervalo":30};
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let ultimo=null,cargando=false,desconectado=false;
+let ultimo=null,cargando=false,desconectado=false,publicacion=null,modalidad='torneos';
+function elegirModalidad(tipo){
+ if(modalidad!==tipo)$('partida-jugadores').value='';modalidad=tipo;
+ if(publicacion)pintar(publicacion);
+}
+$('ver-torneos').addEventListener('click',()=>elegirModalidad('torneos'));
+$('ver-amistosas').addEventListener('click',()=>elegirModalidad('amistosas'));
+function separarPublicacion(d){
+ const seccion=d.modalidades?.[modalidad];
+ if(seccion)return {...seccion,actualizado:d.actualizado};
+ const coincide=(d.torneo?.tipo==='amistosa'?'amistosas':'torneos')===modalidad;
+ return {...d,torneo:coincide?d.torneo:null,tabla:coincide?d.tabla:[],mvp:coincide?d.mvp:[],jugadores:coincide?d.jugadores:[],mvpPartidas:coincide?d.mvpPartidas:[],historial:(d.historial||[]).filter(t=>(t.tipo==='amistosa'?'amistosas':'torneos')===modalidad)};
+}
 function pintarJugadores(){
  const d=ultimo;if(!d)return;
  const partida=(d.mvpPartidas||[]).find(p=>String(p.partida)===$('partida-jugadores').value);
  const jugadores=partida?.jugadores||d.jugadores||d.mvp||[];
- $('mvp-partida').textContent=partida?`Partida ${partida.partida} · ${partida.equipos} equipos con resultado. MVP: ${partida.mvp?.map(j=>j.nombre+' ('+j.kills+' bajas)').join(', ')||'faltan bajas individuales'}.`:'Bajas acumuladas de cada jugador en el torneo. Solo resultados aprobados; la tabla se actualiza al corregir o anular.';
+ $('mvp-partida').textContent=partida?`Partida ${partida.partida} · ${partida.equipos} equipos con resultado. MVP: ${partida.mvp?.map(j=>j.nombre+' ('+j.kills+' bajas)').join(', ')||'faltan bajas individuales'}.`:'Bajas acumuladas de cada jugador en esta sesión. Solo resultados aprobados; la tabla se actualiza al corregir o anular.';
  $('tabla-jugadores').innerHTML=jugadores.map((j,i)=>`<tr><td>${i+1}</td><td>${esc(j.nombre)}</td><td>${esc(j.equipo)}</td><td>${esc(j.partidas??'—')}</td><td class="points">${esc(j.kills)}</td></tr>`).join('');$('vacio-jugadores').hidden=!!jugadores.length;
 }
 $('partida-jugadores').addEventListener('change',pintarJugadores);
 function pintar(d){
- ultimo=d;const t=d.torneo,filas=d.tabla||[];
+ publicacion=d;d=separarPublicacion(d);ultimo=d;const t=d.torneo,filas=d.tabla||[];
+ const amistosa=modalidad==='amistosas';
+ $('ver-torneos').setAttribute('aria-pressed',String(!amistosa));$('ver-amistosas').setAttribute('aria-pressed',String(amistosa));
+ $('descripcion-modalidad').textContent=amistosa?'Resultados y MVP de las privadas amistosas. No suman al ranking de liga.':'Resultados oficiales de los torneos de la liga.';
+ $('titulo-historial').textContent=amistosa?'Amistosas anteriores':'Torneos anteriores';
  const seleccion=$('partida-jugadores').value;
- $('partida-jugadores').innerHTML='<option value="">Todo el torneo</option>'+(d.mvpPartidas||[]).map(p=>`<option value="${esc(p.partida)}">Partida ${esc(p.partida)}</option>`).join('');
+ $('partida-jugadores').innerHTML='<option value="">Toda la sesión</option>'+(d.mvpPartidas||[]).map(p=>`<option value="${esc(p.partida)}">Partida ${esc(p.partida)}</option>`).join('');
  if((d.mvpPartidas||[]).some(p=>String(p.partida)===seleccion))$('partida-jugadores').value=seleccion;
  pintarJugadores();
  document.title=(d.diseno?.titulo||d.servidor||'Warzone')+' · Clasificación';
  if(/^#[0-9a-f]{6}$/i.test(d.diseno?.color||''))document.documentElement.style.setProperty('--lime',d.diseno.color);
- $('servidor').textContent=d.diseno?.titulo || d.servidor || 'WARZONE';$('nombre').textContent=t?.nombre || 'Próximo torneo';
- $('detalle').textContent=t?`${t.numero?'Torneo #'+t.numero+' · ':''}${t.fecha} ${t.hora||''} · ${d.diseno?.subtitulo||'Puntos por puesto + kills del equipo'}`:'Esperando que la organización prepare el próximo torneo.';
- $('estado').textContent=(t?.estado||'SIN TORNEO').toUpperCase();$('formato').textContent=({2:'Dúos',3:'Tríos',4:'Squads'})[t?.formato]||'—';
+ $('servidor').textContent=d.diseno?.titulo || d.servidor || 'WARZONE';$('nombre').textContent=t?.nombre || (amistosa?'Próxima privada amistosa':'Próximo torneo');
+ $('detalle').textContent=t?`${t.numero?(t.tipo==='amistosa'?'Amistosa #':'Torneo #')+t.numero+' · ':''}${t.fecha} ${t.hora||''} · ${d.diseno?.subtitulo||'Puntos por puesto + kills del equipo'}`:(amistosa?'Esperando que la organización abra una privada amistosa.':'Esperando que la organización prepare el próximo torneo.');
+ $('estado').textContent=(t?.estado||(amistosa?'SIN AMISTOSA':'SIN TORNEO')).toUpperCase();$('formato').textContent=({2:'Dúos',3:'Tríos',4:'Squads'})[t?.formato]||'—';
  $('reglas-puntos').textContent=t?`Por partida: (puntos por puesto + bajas × ${t.puntosKill ?? 0}) × ${t.multiplicador ?? 1}. Las sanciones se restan después. Puntos por puesto: ${Object.entries(t.puntosPuesto||{}).map(([p,v])=>p+'º = '+v).join(', ') || '0'}.`:'Esperando configuración del torneo.';
  $('equipos').textContent=filas.length;$('puntos-kill').textContent=t?.puntosKill??'—';
  $('lider-nombre').textContent=filas[0]?.nombre||'Por decidir';$('lider-puntos').textContent=filas[0]?.total??'—';
  $('tabla').innerHTML=filas.map(e=>`<tr><td class="rank">${esc(e.posicion)}</td><td class="team">${esc(e.nombre)}</td><td>${esc(e.quedas)}</td><td>${esc(e.kills)}</td><td>${esc(e.penalizacion)}</td><td class="points">${esc(e.total)}</td></tr>`).join('');$('vacio').hidden=!!filas.length;
  $('eventos').innerHTML=d.eventos?.length?d.eventos.map(e=>`<div class="line"><div><strong>${esc(e.nombre)}</strong><small>${esc(new Date(e.inicio).toLocaleString('es-ES'))} · ${esc(e.ubicacion)}</small><p>${esc(e.descripcion)}</p></div><div>${/^https:\/\/discord\.com\/events\/\d+\/\d+$/.test(e.url)?`<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">Ver evento en Discord ↗</a>`:''}<small>${e.estado===2?'EN CURSO':'PROGRAMADO'}</small></div></div>`).join(''):'<p>No hay próximos eventos publicados.</p>';
  $('mvp').innerHTML=d.mvp?.length?d.mvp.map(j=>`<div class="line"><div><strong>${esc(j.nombre)}</strong><small>${esc(j.equipo)}</small></div><b>${esc(j.kills)} kills</b></div>`).join(''):'<p>Las estadísticas individuales aparecerán cuando se aprueben.</p>';
- $('historial').innerHTML=d.historial?.length?d.historial.map(t=>`<div class="line"><div><strong>${esc(t.nombre)}</strong><small>${esc(t.fecha)}</small></div><span class="detail">${esc(({2:'Dúos',3:'Tríos',4:'Squads'})[t.formato])}</span></div>`).join(''):'<p>El historial empieza con el primer torneo cerrado.</p>';
+ $('historial').innerHTML=d.historial?.length?d.historial.map(t=>`<div class="line"><div><strong>${esc(t.nombre)}</strong><small>${esc(t.fecha)}</small></div><span class="detail">${esc(({2:'Dúos',3:'Tríos',4:'Squads'})[t.formato])}</span></div>`).join(''):(amistosa?'<p>Todavía no hay amistosas finalizadas.</p>':'<p>El historial empieza con el primer torneo cerrado.</p>');
  frescura();
 }
 function frescura(){
