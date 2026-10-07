@@ -14,6 +14,7 @@ body{background:radial-gradient(ellipse at 5% 5%,#bd233e48,transparent 46%),radi
 select{color:#f4f7ff;background:#142039;border:1px solid #bdd0f155;padding:8px;border-radius:7px}
 
 .modalidades{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.modalidades button{font:inherit;font-weight:700;color:var(--text);background:#17243d;border:1px solid var(--line);border-radius:10px;padding:13px 20px;cursor:pointer}.modalidades button[aria-pressed="true"]{background:linear-gradient(130deg,#963348,#275899);border-color:#d0def5}.modalidades button:focus-visible{outline:3px solid #b9dbff;outline-offset:3px}
+.author-credit{justify-content:center;text-align:center;flex-wrap:wrap;padding:18px 12px}
 </style></head><body><main>
 <div class="top"><div class="brand"><span class="mark">W</span>LIGA PARAGUAYA DE WARZONE</div><span class="badge" id="conexion">CARGANDO</span></div>
 <nav class="modalidades" aria-label="Modalidad de competición"><button id="ver-torneos" type="button" aria-pressed="true">🏆 Torneos</button><button id="ver-amistosas" type="button" aria-pressed="false">🤝 Privadas amistosas</button></nav><p id="descripcion-modalidad">Resultados oficiales de los torneos de la liga.</p>
@@ -25,6 +26,8 @@ select{color:#f4f7ff;background:#142039;border:1px solid #bdd0f155;padding:8px;b
 <section class="section"><h2>Reglas de puntuación</h2><p id="reglas-puntos">Esperando configuración del torneo.</p></section>
 <section class="section"><h2>Próximos eventos</h2><div id="eventos"><p>La próxima fecha se publicará aquí.</p></div></section><div class="bottom"><section class="section"><h2>MVP · jugadores</h2><div id="mvp"><p>Las estadísticas individuales aparecerán cuando se aprueben.</p></div></section><section class="section"><h2 id="titulo-historial">Torneos anteriores</h2><div id="historial"><p>El historial empieza con el primer torneo cerrado.</p></div></section></div>
 <footer><span>LIGA PARAGUAYA DE WARZONE / RESULTADOS OFICIALES</span><span id="actualizado">Esperando la primera publicación del bot.</span></footer>
+<footer class="author-credit"><a href="./Reglamento-General-WZPY-v2.0.pdf" target="_blank" rel="noopener noreferrer">Leer / descargar Reglamento General v2.0 (PDF)</a></footer>
+<footer class="author-credit">Creado por TheSpecialOne · © 2026. Todos los derechos reservados.</footer>
 </main><script>
 const config={"url":"https://ghyobahmutlaguvvhbip.supabase.co","clave":"sb_publishable_hVVNSP6p-C2NJEesq8wvqw_IBI1_UAR","slug":"warzone-1506431948350820674","intervalo":30};
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
